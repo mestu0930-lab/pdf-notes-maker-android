@@ -68,9 +68,9 @@ jobs:
           autoconf
 
     # Ubuntu 24 ships autoconf 2.72 which breaks p4a's libffi recipe.
-    # We install autoconf 2.71 + automake 1.16.5 from source, but we must
-    # also keep libtool available so AC_PROG_LIBTOOL is resolvable.
-    - name: Install autoconf 2.71 and automake 1.16.5
+    # We install autoconf 2.71 + automake 1.16.5 + libtool 2.4.7 from source
+    # to ensure all autotools are compatible and libtool macros are available.
+    - name: Install autoconf 2.71, automake 1.16.5, and libtool 2.4.7
       run: |
         sudo apt-get remove -y autoconf automake 2>/dev/null || true
 
@@ -94,31 +94,27 @@ jobs:
         sudo make install
         echo "automake version: $(automake --version | head -1)"
 
-        # Ensure libtool macros are on the aclocal path so libffi can find
-        # AC_PROG_LIBTOOL / AC_PROG_LD during autoreconf
-        sudo ldconfig
-        libtool --version | head -1
-        
-        # Copy libtool macros from system locations to custom aclocal path
-        LOCAL_M4_DIR=/usr/local/share/aclocal
-        sudo mkdir -p "$LOCAL_M4_DIR"
-        
-        # Copy libtool m4 macros from system locations
-        for dir in /usr/share/aclocal /usr/local/share/aclocal; do
-          if [ -d "$dir" ]; then
-            sudo find "$dir" -maxdepth 1 \( -name "libtool*.m4" -o -name "lt*.m4" \) -exec cp {} "$LOCAL_M4_DIR"/ \; 2>/dev/null || true
-          fi
-        done
-        
+        # Install libtool 2.4.7 from source to ensure m4 macros are available
+        cd /tmp
+        wget -q https://ftp.gnu.org/gnu/libtool/libtool-2.4.7.tar.gz
+        tar xzf libtool-2.4.7.tar.gz
+        cd /tmp/libtool-2.4.7
+        ./configure --prefix=/usr/local
+        make -j$(nproc)
+        sudo make install
+        echo "libtool version: $(libtool --version | head -1)"
+
         # Verify libtool macros are present
+        LOCAL_M4_DIR=/usr/local/share/aclocal
         if [ -f "$LOCAL_M4_DIR/libtool.m4" ]; then
           echo "✓ libtool.m4 found in $LOCAL_M4_DIR"
         else
-          echo "Warning: libtool.m4 not found in $LOCAL_M4_DIR"
+          echo "Error: libtool.m4 not found in $LOCAL_M4_DIR"
           echo "Available m4 files:"
           ls -la "$LOCAL_M4_DIR"/*.m4 2>/dev/null || echo "No m4 files found"
+          exit 1
         fi
-        
+
         echo "ACLOCAL_PATH=/usr/local/share/aclocal:/usr/share/aclocal" >> $GITHUB_ENV
 
     - name: Setup Java
