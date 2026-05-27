@@ -1,7 +1,4 @@
 # .github/workflows/build-apk.yml
-# Updated: May 2026
-# Uses latest GitHub Actions versions (v4, v5, v6)
-# Fixes dpkg lock and permission issues
 
 name: Build Android APK
 
@@ -16,38 +13,33 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 240
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
-    
+
     - name: Wait for system lock
       run: |
-        # Wait up to 5 minutes for any system package manager to finish
         for i in {1..60}; do
           if ! sudo lsof /var/lib/apt/lists/lock > /dev/null 2>&1 && \
              ! sudo lsof /var/cache/apt/archives/lock > /dev/null 2>&1 && \
              ! sudo lsof /var/lib/dpkg/lock* > /dev/null 2>&1; then
-            echo "System ready for package installation"
+            echo "System ready"
             break
           fi
-          echo "Waiting for system package manager... ($i/60)"
+          echo "Waiting for package manager... ($i/60)"
           sleep 5
         done
-    
-    - name: Update package manager
-      run: |
-        sudo apt-get update -qq || sudo apt-get update -qq
-    
+
     - name: Install system dependencies
       run: |
-        # Install with retries for timeout issues
+        sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
           build-essential \
           libffi-dev \
@@ -60,25 +52,27 @@ jobs:
           libtiff-dev \
           libfreetype6-dev \
           openjdk-11-jdk-headless \
-          openjdk-11-jre-headless \
           git \
           wget \
           unzip \
-          ca-certificates
-    
+          ca-certificates \
+          autoconf \
+          automake \
+          libtool \
+          pkg-config
+
     - name: Setup Java environment
       run: |
         echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
-        export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
         java -version
-    
+
     - name: Setup Android SDK paths
       run: |
         mkdir -p ~/Android/Sdk
         echo "ANDROID_HOME=$HOME/Android/Sdk" >> $GITHUB_ENV
         echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
         echo "$HOME/Android/Sdk/tools:$HOME/Android/Sdk/tools/bin:$HOME/Android/Sdk/platform-tools" >> $GITHUB_PATH
-    
+
     - name: Cache pip packages
       uses: actions/cache@v4
       with:
@@ -86,7 +80,7 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    
+
     - name: Cache buildozer
       uses: actions/cache@v4
       with:
@@ -94,83 +88,59 @@ jobs:
         key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
         restore-keys: |
           ${{ runner.os }}-buildozer-
-    
-    - name: Install Python tools
+
+    - name: Install Python build tools
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install Cython==0.29.32
+        pip install Cython==0.29.36
         pip install buildozer==1.5.0
-    
-    - name: Install project dependencies
+        pip install python-for-android==2023.9.16
+
+    - name: Install project dependencies (dev only)
       run: |
-        pip install -r requirements.txt
-    
-    - name: Configure Buildozer
-      run: |
-        mkdir -p ~/.buildozer
-        mkdir -p ~/.buildozer/android
-        mkdir -p ~/.buildozer/android/platform
-        echo "Buildozer configuration complete"
-    
+        # Install only packages that work on the host (not p4a-only ones)
+        pip install requests httpx aiohttp markdown pypdf python-docx \
+                    python-dateutil cryptography aiofiles six urllib3 \
+                    certifi charset-normalizer idna || true
+
     - name: Clean old builds
       run: |
         rm -rf .buildozer/android/platform/build-* 2>/dev/null || true
         rm -rf bin/*.apk 2>/dev/null || true
-        rm -rf build/ 2>/dev/null || true
-    
+
     - name: Build APK
+      # FIX: buildozer debug takes no extra CLI flags — all config is in buildozer.spec
       run: |
         export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
         export ANDROID_HOME=$HOME/Android/Sdk
         export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
-        
-        buildozer android debug \
-          --dir . \
-          --verbose \
-          --ndk-api 21 \
-          --minsdk-api 21 \
-          --android-api 34 \
-          --requirements python3,kivy,requests,httpx,markdown,pypdf,python-docx,cryptography,openai,pydantic
-    
+        buildozer android debug
+
     - name: Check APK generation
       run: |
         echo "=== Checking for APK files ==="
-        if find bin -name "*.apk" -type f 2>/dev/null; then
+        if find bin -name "*.apk" -type f 2>/dev/null | grep -q .; then
           echo "✅ APK found successfully!"
           ls -lh bin/*.apk
         else
-          echo "⚠️ No APK found in bin directory"
-          echo "=== Directory structure ==="
-          find . -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
-          ls -la bin/ 2>/dev/null || echo "No bin directory"
+          echo "❌ No APK found"
+          find . -name "*.apk" 2>/dev/null || echo "No APK files anywhere"
         fi
-    
+
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
-      if: always()
+      if: success()
       with:
         name: pdf-notes-maker-apk
         path: bin/*.apk
         retention-days: 30
-        if-no-files-found: ignore
-    
-    - name: Upload build logs
+        if-no-files-found: warn
+
+    - name: Upload build logs on failure
       uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: build-logs
-        path: |
-          .buildozer/
+        path: .buildozer/
         retention-days: 7
         if-no-files-found: ignore
-    
-    - name: Build status
-      if: always()
-      run: |
-        echo "=== Build Status ==="
-        if [ -f bin/*.apk ]; then
-          echo "✅ APK Build Successful"
-          ls -lh bin/*.apk
-        else
-          echo "⚠️ APK may not have been created - check logs above"
-        fi
