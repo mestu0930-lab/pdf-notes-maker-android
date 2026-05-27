@@ -1,45 +1,45 @@
-name: Build Android APK
 
+name: Build Android APK
+ 
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
+ 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 240
-
+ 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+ 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Cache buildozer
-      uses: actions/cache@v4
-      with:
-        path: ~/.buildozer
-        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-v2
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
-
+        cache: 'pip'
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+ 
+    - name: Wait for system lock
+      run: |
+        for i in {1..60}; do
+          if ! sudo lsof /var/lib/apt/lists/lock > /dev/null 2>&1 && \
+             ! sudo lsof /var/cache/apt/archives/lock > /dev/null 2>&1 && \
+             ! sudo lsof /var/lib/dpkg/lock* > /dev/null 2>&1; then
+            echo "System ready"
+            break
+          fi
+          echo "Waiting for package manager... ($i/60)"
+          sleep 5
+        done
+ 
     - name: Install system dependencies
       run: |
         sudo apt-get update -qq
@@ -61,31 +61,110 @@ jobs:
           libfreetype6-dev \
           libtool \
           libtool-bin \
-          libltdl-dev \
-          autoconf \
-          automake \
           pkg-config \
           lld \
           cmake \
-          m4
-
+          m4 \
+          automake \
+          autoconf
+ 
+    # Ubuntu 24 ships autoconf 2.72 which breaks p4a's libffi recipe.
+    # We install autoconf 2.71 + automake 1.16.5 from source, but we must
+    # also keep libtool available so AC_PROG_LIBTOOL is resolvable.
+    - name: Install autoconf 2.71 and automake 1.16.5
+      run: |
+        sudo apt-get remove -y autoconf automake 2>/dev/null || true
+ 
+        # Install autoconf 2.71
+        cd /tmp
+        wget -q https://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
+        tar xzf autoconf-2.71.tar.gz
+        cd /tmp/autoconf-2.71
+        ./configure --prefix=/usr/local
+        make -j$(nproc)
+        sudo make install
+        echo "autoconf version: $(autoconf --version | head -1)"
+ 
+        # Install automake 1.16.5
+        cd /tmp
+        wget -q https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
+        tar xzf automake-1.16.5.tar.gz
+        cd /tmp/automake-1.16.5
+        ./configure --prefix=/usr/local
+        make -j$(nproc)
+        sudo make install
+        echo "automake version: $(automake --version | head -1)"
+ 
+        # Ensure libtool macros are on the aclocal path so libffi can find
+        # AC_PROG_LIBTOOL / AC_PROG_LD during autoreconf
+        sudo ldconfig
+        libtool --version | head -1
+        # Symlink system libtool m4 macros into the aclocal search path
+        LIBTOOL_M4_DIR=$(ls -d /usr/share/aclocal 2>/dev/null || true)
+        LOCAL_M4_DIR=/usr/local/share/aclocal
+        sudo mkdir -p "$LOCAL_M4_DIR"
+        if [ -d "$LIBTOOL_M4_DIR" ]; then
+          sudo cp -n "$LIBTOOL_M4_DIR"/libtool*.m4 "$LOCAL_M4_DIR"/ 2>/dev/null || true
+          sudo cp -n "$LIBTOOL_M4_DIR"/lt*.m4      "$LOCAL_M4_DIR"/ 2>/dev/null || true
+        fi
+        echo "ACLOCAL_PATH=/usr/local/share/aclocal:/usr/share/aclocal" >> $GITHUB_ENV
+ 
     - name: Setup Java
       run: |
         echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
         java -version
-
-    - name: Install Buildozer and dependencies
+ 
+    - name: Setup Android SDK paths
       run: |
-        pip install --upgrade pip setuptools wheel
+        mkdir -p ~/Android/Sdk
+        echo "ANDROID_HOME=$HOME/Android/Sdk"     >> $GITHUB_ENV
+        echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
+        echo "$HOME/Android/Sdk/tools:$HOME/Android/Sdk/tools/bin:$HOME/Android/Sdk/platform-tools" >> $GITHUB_PATH
+ 
+    - name: Cache pip
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: ${{ runner.os }}-pip-
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+ 
+    - name: Cache buildozer
+      uses: actions/cache@v4
+      with:
+        path: ~/.buildozer
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}-autoconf271
+        restore-keys: ${{ runner.os }}-buildozer-
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+ 
+    - name: Install Python build tools
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
         pip install "Cython>=3.0.0,<3.1.0"
         pip install buildozer==1.5.0
-        pip install -r requirements.txt
-
-    - name: Build APK (Debug)
+        pip install "python-for-android==2024.1.21"
+ 
+    - name: Install host-side dependencies
+      run: |
+        pip install requests markdown pypdf python-docx \
+                    python-dateutil aiofiles six urllib3 \
+                    certifi charset-normalizer idna || true
+ 
+    - name: Clean old builds
+      run: |
+        rm -rf .buildozer/android/platform/build-* 2>/dev/null || true
+        rm -rf bin/*.apk 2>/dev/null || true
+ 
+    - name: Build APK
       run: |
         export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+        export ANDROID_HOME=$HOME/Android/Sdk
+        export PATH=/usr/local/bin:$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+        export ACLOCAL_PATH=/usr/local/share/aclocal:/usr/share/aclocal
         buildozer android debug
-
+ 
     - name: Check APK
       run: |
         if find bin -name "*.apk" -type f 2>/dev/null | grep -q .; then
@@ -95,7 +174,7 @@ jobs:
           echo "❌ No APK found"
           find . -name "*.apk" 2>/dev/null || true
         fi
-
+ 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       if: success()
@@ -104,13 +183,16 @@ jobs:
         path: bin/*.apk
         retention-days: 30
         if-no-files-found: warn
-
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+ 
     - name: Upload logs on failure
       uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: build-logs
-        path: |
-          /home/runner/.buildozer/
+        path: .buildozer/
         retention-days: 7
         if-no-files-found: ignore
+      env:
+        FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
