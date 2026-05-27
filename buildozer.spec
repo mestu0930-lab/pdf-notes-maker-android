@@ -148,7 +148,7 @@ android.entrypoint = org.kivy.android.PythonActivity
 [buildozer]
 
 # (log_level) {0, 1, 2} or {quiet, info, debug}
-log_level = 2
+log_level = 1
 
 # (warn_on_root) Warn if buildozer is run as root
 warn_on_root = 1
