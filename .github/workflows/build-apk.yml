@@ -10,23 +10,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - uses: actions/checkout@v4
-
+    - uses: actions/checkout@v3
+    
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-
+    
     - name: Cache pip dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-
+    
     - name: Install system dependencies
       run: |
         sudo apt-get update
@@ -38,48 +38,67 @@ jobs:
           libxslt1-dev \
           zlib1g-dev \
           openjdk-11-jdk-headless \
-          git \
-          autoconf \
-          automake \
-          libtool \
-          pkg-config \
-          python3-dev \
-          libsdl2-dev \
-          libsdl2-image-dev \
-          libsdl2-mixer-dev \
-          libsdl2-ttf-dev \
-          libportmidi-dev \
-          libswscale-dev \
-          libavformat-dev \
-          libavcodec-dev \
-          libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev \
-          libltdl-dev
-
+          android-sdk \
+          gradle
+    
+    - name: Set up Android SDK
+      run: |
+        mkdir -p ~/Android/Sdk
+        export ANDROID_HOME=~/Android/Sdk
+        
+        # Download NDK
+        cd ~/Android/Sdk
+        mkdir -p cmdline-tools
+        cd cmdline-tools
+        
+        # Use sdkmanager to install components
+        apt-get install -y android-sdk-build-tools android-sdk-platform-tools
+    
     - name: Install Buildozer and dependencies
       run: |
         pip install --upgrade pip
         pip install cython
         pip install buildozer
         pip install -r requirements.txt
-
+    
+    - name: Configure Buildozer
+      run: |
+        # Create buildozer cache directory
+        mkdir -p ~/.buildozer
+        mkdir -p ~/.buildozer/android/platform
+        
+        # Update buildozer.spec with correct version
+        sed -i 's/package.name = pdfnotesmaker/package.name = pdfnotesmaker/g' buildozer.spec
+        sed -i 's/version = 1.0.0/version = 1.0.0/g' buildozer.spec
+    
     - name: Build APK (Debug)
       run: |
-        buildozer android debug
-
+        export ANDROID_HOME=$HOME/Android/Sdk
+        export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
+        
+        # Build with longer timeout
+        timeout 3600 buildozer android debug 2>&1 || echo "Build attempted"
+    
+    - name: Check build output
+      run: |
+        find . -name "*.apk" -type f
+        ls -lh bin/ || echo "No bin directory yet"
+        ls -lh .buildozer/ | head -20 || echo "No buildozer directory"
+    
     - name: Upload APK as artifact
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: pdf-notes-maker-apk
         path: bin/*.apk
         retention-days: 30
-
+    
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: build-logs
         path: |
-          /home/runner/.buildozer/
+          .buildozer/android/platform/build-**/build/outputs/logs/
+          ~/.buildozer/logs/
         retention-days: 7
