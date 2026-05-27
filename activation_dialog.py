@@ -25,7 +25,7 @@ from license_manager import LicenseManager, get_embedded_license_key
 
 
 # ========== Configuration ==========
-LICENSE_SERVER_URL = "https://mestu0930.pythonanywhere.com/api/activate"
+LICENSE_SERVER_URL = "https://mestu090909.pythonanywhere.com/api/activate"
 MAX_RECEIPT_SIZE = 10 * 1024 * 1024  # 10 MB limit
 
 
