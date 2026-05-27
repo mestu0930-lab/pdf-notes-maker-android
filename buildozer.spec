@@ -27,11 +27,10 @@ source.exclude_patterns = tests/*,docs/*,build/*,*.pyc,__pycache__
 # (version) Application versioning (method 1)
 version = 1.0.0
 
-# (version.regex) Regex string to find the version from buildozer.spec file
-version.regex = __version__ = ['"](.*)['"]
-
-# (version.filename) File where the version is stored
-version.filename = %(source.dir)s/main.py
+# NOTE: version.regex and version.filename removed — conflicts with hardcoded version above.
+# To auto-detect version from main.py instead, remove the "version" line above and uncomment:
+# version.regex = __version__ = ['"](.*)['"]
+# version.filename = %(source.dir)s/main.py
 
 # (requirements) comma separated list of requirements android/ios
 # The format is "library (optional version)"
@@ -57,7 +56,6 @@ requirements =
     plyer==2.1.0
 
 # (garden_requirements) Comma separated list of garden requirements
-# In this project, garden is optional - we're using Kivy core widgets
 garden_requirements = 
 
 # (permissions) Needed permissions on android
@@ -106,9 +104,6 @@ android.icon = ./assets/icon.png
 # (android.presplash) Presplash image (512x512 PNG recommended)
 android.presplash = ./assets/presplash.png
 
-# (android.presplash_lottie) Lottie animation for presplash
-# android.presplash_lottie = ./assets/presplash.json
-
 # (android.orientation) App orientation
 android.orientation = portrait
 
@@ -123,11 +118,8 @@ android.immersive_mode = True
 # (android.uses_internet) Uses internet permission
 android.uses_internet = True
 
-# (android.bootstrap) Bootstrap to use
-android.bootstrap = sdl2
-
-# (android.app_theme) Application theme
-# android.app_theme = @android:style/Theme.Material.Light.DarkActionBar
+# FIX 1: renamed from android.bootstrap (deprecated) to p4a.bootstrap
+p4a.bootstrap = sdl2
 
 # (android.meta_data) Additional metadata
 android.meta_data = 
@@ -135,13 +127,8 @@ android.meta_data =
 
 # ========== Gradle Configuration ==========
 
-# (android.gradle_dependencies) Gradle dependencies
 android.gradle_dependencies = 
 
-# (android.add_src) Additional source files to add
-# android.add_src = 
-
-# (android.entrypoint) Java entry point (leave as is for standard Kivy)
 android.entrypoint = org.kivy.android.PythonActivity
 
 # ========== Build Configuration ==========
@@ -157,19 +144,11 @@ warn_on_root = 1
 # (android.skip_update) Skip update of android/gradle
 android.skip_update = False
 
-# (android.gradle_options) Gradle options to pass
-# android.gradle_options = org.gradle.jvmargs=-Xmx4096m
-
 # ========== Optional: Signing Configuration ==========
 
 # Uncomment and configure if you want to sign the APK
-# (android.keystore) Keystore file path
 # android.keystore = /path/to/your/keystore.jks
-
-# (android.keystore_alias) Keystore alias
 # android.keystore_alias = my_key
-
-# (android.keystore_passwd) Keystore password (NOT recommended - use environment variable)
 # android.keystore_passwd = your_keystore_password
 
 # ========== iOS Configuration (Optional) ==========
@@ -178,14 +157,5 @@ android.skip_update = False
 
 # (ios.requirements) iOS specific requirements
 ios.requirements = pyobjc,lxml,requests,httpx,openai,pydantic,cryptography
-
-# (ios.codesign_identity) Codesign identity
-# ios.codesign_identity = iPhone Developer
-
-# (ios.provisioning_profile_specifier) Provisioning profile
-# ios.provisioning_profile_specifier = 
-
-# (ios.entitlements_plist_content) Entitlements
-# ios.entitlements_plist_content = 
 
 # EOF
