@@ -53,8 +53,8 @@ from license_manager import LicenseManager, get_embedded_license_key
 
 # ========== Configuration ==========
 SIGNING_SECRET = b'\xe6\xc9\xc4!\xaf\xe5l\x98RY\xdf\xf9z\xa3\x1e\xef'
-LICENSE_SERVER_URL = "https://mestu0930.pythonanywhere.com/api/activate"
-LICENSE_CHECK_URL = "https://mestu0930.pythonanywhere.com/api/check_license"
+LICENSE_SERVER_URL = "https://mestu090909.pythonanywhere.com/api/activate"
+LICENSE_CHECK_URL = "https://mestu090909.pythonanywhere.com/api/check_license"
 
 SERVICE_DISPLAY = {
     'openai': 'OpenAI',
