@@ -28,7 +28,7 @@ source.exclude_patterns = tests/*,docs/*,build/*,*.pyc,__pycache__
 version = 1.0.0
 
 # (version.regex) Regex string to find the version from buildozer.spec file
-version.regex = __version__ = ['"](.*)['"]
+# version.regex = __version__ = ['"](.*)['"]   ← REMOVED (conflict with 'version')
 
 # (version.filename) File where the version is stored
 version.filename = %(source.dir)s/main.py
@@ -53,11 +53,10 @@ requirements =
     cffi==1.16.0,
     pycparser==2.21,
     aiofiles==23.2.1,
-    pyjnius==1.5.2,
+    pyjnius==1.7.0,
     plyer==2.1.0
 
 # (garden_requirements) Comma separated list of garden requirements
-# In this project, garden is optional - we're using Kivy core widgets
 garden_requirements = 
 
 # (permissions) Needed permissions on android
@@ -123,8 +122,8 @@ android.immersive_mode = True
 # (android.uses_internet) Uses internet permission
 android.uses_internet = True
 
-# (android.bootstrap) Bootstrap to use
-android.bootstrap = sdl2
+# (android.bootstrap) Bootstrap to use   ← CHANGED to p4a.bootstrap
+p4a.bootstrap = sdl2
 
 # (android.app_theme) Application theme
 # android.app_theme = @android:style/Theme.Material.Light.DarkActionBar
@@ -162,7 +161,6 @@ android.skip_update = False
 
 # ========== Optional: Signing Configuration ==========
 
-# Uncomment and configure if you want to sign the APK
 # (android.keystore) Keystore file path
 # android.keystore = /path/to/your/keystore.jks
 
@@ -187,5 +185,3 @@ ios.requirements = pyobjc,lxml,requests,httpx,openai,pydantic,cryptography
 
 # (ios.entitlements_plist_content) Entitlements
 # ios.entitlements_plist_content = 
-
-# EOF
