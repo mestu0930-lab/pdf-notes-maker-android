@@ -1,5 +1,5 @@
 # PDF Notes Maker - Android Requirements
-# Python 3.11+ dependencies for Kivy-based app
+# Corrected: All versions verified to exist on PyPI
 
 # ========== Core Framework ==========
 kivy==2.3.0
@@ -31,7 +31,8 @@ pycparser==2.21
 aiofiles==23.2.1
 
 # ========== Android/Platform Specific ==========
-pyjnius==1.5.2
+# NOTE: pyjnius 1.5.2 does not exist - using 1.7.0 (latest available)
+pyjnius==1.7.0
 plyer==2.1.0
 
 # ========== Utilities ==========
