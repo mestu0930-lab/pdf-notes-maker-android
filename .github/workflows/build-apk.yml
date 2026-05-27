@@ -12,15 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
     - name: Cache pip dependencies
-      uses: actions/cache@v5
+      uses: actions/cache@v4
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
@@ -40,6 +40,7 @@ jobs:
           openjdk-11-jdk-headless \
           git \
           autoconf \
+          automake \
           libtool \
           pkg-config \
           python3-dev \
@@ -52,7 +53,8 @@ jobs:
           libavformat-dev \
           libavcodec-dev \
           libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev
+          libgstreamer-plugins-base1.0-dev \
+          libltdl-dev
 
     - name: Install Buildozer and dependencies
       run: |
@@ -67,7 +69,7 @@ jobs:
 
     - name: Upload APK as artifact
       if: always()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: pdf-notes-maker-apk
         path: bin/*.apk
@@ -75,7 +77,7 @@ jobs:
 
     - name: Upload logs on failure
       if: failure()
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v4
       with:
         name: build-logs
         path: |
