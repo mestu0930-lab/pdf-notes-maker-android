@@ -1,6 +1,8 @@
-# PDF Notes Maker - Android Requirements
-# FIXED: All dependency conflicts resolved
-# Python 3.11+ dependencies for Kivy-based app
+# PDF Notes Maker - requirements.txt
+# For LOCAL DEVELOPMENT only (pip install -r requirements.txt)
+# These are NOT the same as buildozer.spec requirements.
+# Packages like openai, pydantic, httpx are fine for desktop/dev but
+# CANNOT be used in buildozer.spec (no p4a recipe = HTTP 404 build error).
 
 # ========== Core Framework ==========
 kivy==2.3.0
@@ -8,14 +10,22 @@ kivy-garden==0.1.5
 
 # ========== Web/API Communication ==========
 requests==2.31.0
+urllib3==2.1.0
+certifi==2023.7.22
+charset-normalizer==3.3.2
+idna==3.6
+
+# NOTE: httpx and aiohttp work fine locally but have no p4a recipe.
+# If your Android app uses them, you need a custom p4a recipe.
 httpx==0.25.2
 aiohttp==3.9.1
 
 # ========== AI/LLM Integration ==========
+# openai and pydantic work locally but have NO p4a recipe.
+# They cannot be bundled via buildozer.spec for Android.
 openai==1.3.9
 pydantic==2.5.0
-# FIXED: Removed pydantic-core==2.14.5 pinning (conflicted with pydantic==2.5.0)
-# Let pydantic automatically install its required pydantic-core==2.14.1
+# pydantic-core is installed automatically by pydantic â€” do not pin separately
 typing-extensions==4.8.0
 
 # ========== Document Processing ==========
@@ -33,17 +43,10 @@ pycparser==2.21
 aiofiles==23.2.1
 
 # ========== Android/Platform Specific ==========
-pyjnius==1.7.0
+# pyjnius and plyer are only relevant on Android; they can be installed
+# locally but won't do anything useful on desktop.
+pyjnius==1.4.1
 plyer==2.1.0
 
 # ========== Utilities ==========
 six==1.16.0
-urllib3==2.1.0
-charset-normalizer==3.3.2
-certifi==2023.7.22
-idna==3.6
-
-# ========== Optional: PDF Export Enhancement ==========
-# Uncomment if you need advanced PDF generation
-# reportlab==4.0.7
-# weasyprint==59.2
