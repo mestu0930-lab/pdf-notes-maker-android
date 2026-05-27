@@ -68,11 +68,6 @@ jobs:
       run: |
         buildozer android debug
 
-    - name: Check build output
-      run: |
-        find . -name "*.apk" -type f
-        ls -lh bin/ || echo "No bin directory yet"
-
     - name: Upload APK as artifact
       if: always()
       uses: actions/upload-artifact@v4
@@ -87,6 +82,5 @@ jobs:
       with:
         name: build-logs
         path: |
-          .buildozer/
           /home/runner/.buildozer/
         retention-days: 7
