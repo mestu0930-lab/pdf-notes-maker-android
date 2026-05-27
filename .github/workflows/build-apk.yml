@@ -1,6 +1,4 @@
 # .github/workflows/build-apk.yml
-# Fix: libffi autoreconf fails with autoconf 2.72 (Ubuntu 24 default).
-# Solution: downgrade autoconf to 2.71 which is compatible with p4a's libffi recipe.
 
 name: Build Android APK
 
@@ -64,28 +62,31 @@ jobs:
           cmake \
           m4
 
-    # Ubuntu 24 ships autoconf 2.72 which breaks p4a's old libffi recipe.
-    # Downgrade to 2.71 which is the last version compatible with that configure.ac.
-    - name: Install autoconf 2.71 (fixes libffi LT_SYS_SYMBOL_USCORE error)
+    # Ubuntu 24 ships autoconf 2.72 which breaks p4a's libffi recipe.
+    # Downgrade autoconf to 2.71 and automake to 1.16.5.
+    - name: Install autoconf 2.71 and automake 1.16.5
       run: |
         sudo apt-get remove -y autoconf automake 2>/dev/null || true
+
+        # Install autoconf 2.71
         cd /tmp
         wget -q https://ftp.gnu.org/gnu/autoconf/autoconf-2.71.tar.gz
         tar xzf autoconf-2.71.tar.gz
-        cd autoconf-2.71
+        cd /tmp/autoconf-2.71
         ./configure --prefix=/usr/local
         make -j$(nproc)
         sudo make install
-        autoconf --version | head -1
+        echo "autoconf version: $(autoconf --version | head -1)"
 
-        wget -q https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
+        # Install automake 1.16.5
         cd /tmp
+        wget -q https://ftp.gnu.org/gnu/automake/automake-1.16.5.tar.gz
         tar xzf automake-1.16.5.tar.gz
-        cd automake-1.16.5
+        cd /tmp/automake-1.16.5
         ./configure --prefix=/usr/local
         make -j$(nproc)
         sudo make install
-        automake --version | head -1
+        echo "automake version: $(automake --version | head -1)"
 
     - name: Setup Java
       run: |
