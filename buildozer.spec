@@ -14,7 +14,7 @@ version = 1.0.0
 
 # -----------------------------------------------------------------------
 # REQUIREMENTS — p4a recipes only
-# Verified compatible with python-for-android==2024.1.21 + kivy==2.3.0
+# Verified compatible with python-for-android==2024.1.21 + kivy==2.4.0
 #
 # Removed:
 #   cffi        — conflicts with cryptography's bundled libffi (autoreconf crash)
@@ -26,7 +26,7 @@ version = 1.0.0
 # -----------------------------------------------------------------------
 requirements =
     python3,
-    kivy==2.3.0,
+    kivy==2.4.0,
     requests==2.31.0,
     urllib3,
     certifi,
