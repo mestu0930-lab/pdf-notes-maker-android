@@ -1,42 +1,32 @@
-[app]
+# Core Framework
+kivy==2.3.0
 
-# (str) Title of your application
-title = PDF Notes Maker
+# Web/API Communication
+requests==2.31.0
+httpx==0.25.2
+aiohttp==3.9.1
 
-# (str) Package name
-package.name = pdfnotesmaker
+# AI/LLM Integration
+openai==1.3.9
 
-# (str) Package domain (needed for android/ios packaging)
-package.domain = org.mestu.pdfnotesmaker
+# Document Processing
+pypdf==3.17.1
+python-docx==0.8.11
+markdown==3.5.1
 
-# (str) Source code where the main.py live
-source.dir = .
+# Encryption & Security
+cryptography==41.0.7
 
-# (list) Source files to include (let empty to include all the files)
-source.include_exts = py,png,jpg,kv,atlas,ttf,woff2,ico,json,html,js,css
+# Async Support
+aiofiles==23.2.1
 
-# (str) Application versioning (method 1)
-version = 1.0.0
+# Android/Platform Specific
+pyjnius==1.7.0
+plyer==2.1.0
 
-# (list) Application requirements
-requirements = python3,kivy==2.3.0,requests,httpx,openai,pypdf,python-docx,markdown,cryptography,aiohttp,aiofiles,pyjnius,plyer
-
-# (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
-orientation = portrait
-
-# (str) The bootstrap to use (android only)
-p4a.bootstrap = sdl2
-
-# (list) Permissions
-android.permissions = INTERNET, WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE
-
-# (str) Entry point
-entry_point = main.py
-
-[buildozer]
-
-# (int) Log level (0 = error only, 1 = info, 2 = debug (with command output))
-log_level = 1
-
-# (int) Display warning if buildozer is run as root (0 = False, 1 = True)
-warn_on_root = 1
+# Utilities
+six==1.16.0
+urllib3==2.1.0
+charset-normalizer==3.3.2
+certifi==2023.7.22
+idna==3.6
