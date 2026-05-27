@@ -12,122 +12,101 @@ package.domain = org.pdfnotesmaker
 # (source.dir) Source code directory where the main.py live
 source.dir = .
 
-# (source.include_exts) Source include extensions (let empty to include all the files)
+# (source.include_exts) Source files to include
 source.include_exts = py,png,jpg,kv,atlas,json,html
 
-# (source.include_patterns) Patterns to include from source directory
+# (source.include_patterns) Patterns to include
 source.include_patterns = assets/*,data/*,*.html,*.json,*.txt
 
-# (source.exclude_exts) Source exclude extensions
+# (source.exclude_exts) Files to exclude
 source.exclude_exts = spec
 
-# (source.exclude_patterns) Patterns to exclude from source directory
+# (source.exclude_patterns) Patterns to exclude
 source.exclude_patterns = tests/*,docs/*,build/*,*.pyc,__pycache__
 
-# (version) Application versioning (method 1)
+# (version) Application version — only one versioning method allowed
 version = 1.0.0
 
-# NOTE: version.regex and version.filename removed — conflicts with hardcoded version above.
-# To auto-detect version from main.py instead, remove the "version" line above and uncomment:
-# version.regex = __version__ = ['"](.*)['"]
-# version.filename = %(source.dir)s/main.py
-
-# (requirements) comma separated list of requirements android/ios
-# The format is "library (optional version)"
-requirements = 
+# (requirements) Only p4a-compatible packages go here.
+# Heavy packages like openai, pydantic, httpx, aiohttp are NOT p4a recipes
+# and cause HTTP 404 download errors during build — do NOT add them here.
+requirements =
     python3,
     kivy==2.3.0,
     requests==2.31.0,
-    httpx==0.25.2,
-    aiohttp==3.9.1,
-    openai==1.3.9,
-    pydantic==2.5.0,
-    pydantic-core==2.14.5,
-    typing-extensions==4.8.0,
+    urllib3,
+    certifi,
+    charset-normalizer,
+    idna,
     pypdf==3.17.1,
-    python-docx==0.8.11,
     markdown==3.5.1,
     python-dateutil==2.8.2,
-    cryptography==41.0.7,
-    cffi==1.16.0,
+    six==1.16.0,
+    cryptography,
+    cffi,
     pycparser==2.21,
     aiofiles==23.2.1,
-    pyjnius==1.5.2,
+    pyjnius,
     plyer==2.1.0
 
-# (garden_requirements) Comma separated list of garden requirements
-garden_requirements = 
+# NOTE: openai, pydantic, pydantic-core, httpx, aiohttp, typing-extensions
+# are NOT available as p4a recipes and will cause HTTP 404 build failures.
+# Bundle them manually via a custom p4a recipe if your app needs them.
 
-# (permissions) Needed permissions on android
-android.permissions = 
+# (garden_requirements) Leave empty unless using Kivy Garden widgets
+garden_requirements =
+
+# (permissions) Android permissions
+android.permissions =
     INTERNET,
     READ_EXTERNAL_STORAGE,
     WRITE_EXTERNAL_STORAGE,
-    ACCESS_NETWORK_STATE,
-    ACCESS_FINE_LOCATION
+    ACCESS_NETWORK_STATE
 
-# (android.api_target) Highest API level the app targets
-android.api_target = 34
+# (android.api) Target API level
+android.api = 34
 
-# (android.minapi) Minimum API level required
+# (android.minapi) Minimum API level
 android.minapi = 21
 
-# (android.ndk) NDK version
+# (android.ndk) NDK version to use
 android.ndk = 25c
 
-# (android.ndk_api) API level for NDK
+# (android.ndk_api) NDK API level
 android.ndk_api = 21
 
-# (android.accept_sdk_license) Accept Android SDK license
+# (android.accept_sdk_license) Auto-accept SDK licenses
 android.accept_sdk_license = True
 
-# (android.arch) Target architecture
+# (android.archs) Target architectures
 android.archs = arm64-v8a,armeabi-v7a
 
-# (android.features) Required device features
-android.features = android.hardware.usb.host
-
-# (android.release_artifact) Release artifact type
+# (android.release_artifact) Output type
 android.release_artifact = apk
 
-# (android.logcat_filters) Logcat filter strings
+# (android.logcat_filters) Logcat filter
 android.logcat_filters = *:S python:D
 
-# (android.private_storage) Use private storage
+# (android.private_storage) Use private app storage
 android.private_storage = True
 
 # ========== Icons & Branding ==========
 
-# (android.icon) Icon location (192x192 PNG recommended)
 android.icon = ./assets/icon.png
-
-# (android.presplash) Presplash image (512x512 PNG recommended)
 android.presplash = ./assets/presplash.png
-
-# (android.orientation) App orientation
 android.orientation = portrait
-
-# (android.fullscreen) Fullscreen mode
 android.fullscreen = False
-
-# (android.immersive_mode) Immersive mode (hides system UI)
 android.immersive_mode = True
 
-# ========== Manifest Configuration ==========
+# ========== Manifest ==========
 
-# (android.uses_internet) Uses internet permission
 android.uses_internet = True
 
-# FIX 1: renamed from android.bootstrap (deprecated) to p4a.bootstrap
+# FIX: renamed from deprecated android.bootstrap
 p4a.bootstrap = sdl2
 
-# (android.meta_data) Additional metadata
-android.meta_data = 
+android.meta_data =
     android.max_aspect = 2.5
-
-# ========== Gradle Configuration ==========
-
-android.gradle_dependencies = 
 
 android.entrypoint = org.kivy.android.PythonActivity
 
@@ -135,27 +114,11 @@ android.entrypoint = org.kivy.android.PythonActivity
 
 [buildozer]
 
-# (log_level) {0, 1, 2} or {quiet, info, debug}
 log_level = 2
-
-# (warn_on_root) Warn if buildozer is run as root
 warn_on_root = 1
-
-# (android.skip_update) Skip update of android/gradle
 android.skip_update = False
 
-# ========== Optional: Signing Configuration ==========
-
-# Uncomment and configure if you want to sign the APK
-# android.keystore = /path/to/your/keystore.jks
-# android.keystore_alias = my_key
-# android.keystore_passwd = your_keystore_password
-
-# ========== iOS Configuration (Optional) ==========
+# ========== iOS (Optional) ==========
 
 [app:ios]
-
-# (ios.requirements) iOS specific requirements
-ios.requirements = pyobjc,lxml,requests,httpx,openai,pydantic,cryptography
-
-# EOF
+ios.requirements = pyobjc,lxml,requests,cryptography
