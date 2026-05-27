@@ -1,5 +1,6 @@
 # PDF Notes Maker - Android Requirements
-# Corrected: All versions verified to exist on PyPI
+# FIXED: All dependency conflicts resolved
+# Python 3.11+ dependencies for Kivy-based app
 
 # ========== Core Framework ==========
 kivy==2.3.0
@@ -13,7 +14,8 @@ aiohttp==3.9.1
 # ========== AI/LLM Integration ==========
 openai==1.3.9
 pydantic==2.5.0
-pydantic-core==2.14.5
+# FIXED: Removed pydantic-core==2.14.5 pinning (conflicted with pydantic==2.5.0)
+# Let pydantic automatically install its required pydantic-core==2.14.1
 typing-extensions==4.8.0
 
 # ========== Document Processing ==========
@@ -31,7 +33,6 @@ pycparser==2.21
 aiofiles==23.2.1
 
 # ========== Android/Platform Specific ==========
-# NOTE: pyjnius 1.5.2 does not exist - using 1.7.0 (latest available)
 pyjnius==1.7.0
 plyer==2.1.0
 
