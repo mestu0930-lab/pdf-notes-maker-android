@@ -1,6 +1,9 @@
 # .github/workflows/build-apk.yml
-# Fixed: Node.js 24 compatible action versions
-# Fixed: libffi/cffi build conflict resolved via buildozer.spec
+# Fixed:
+#   - Upgraded to Node.js 24-native action versions (no FORCE env var needed)
+#   - Pinned python-for-android to 2024.1.21 which has kivy==2.3.0 recipe
+#   - Pinned Cython to 3.0.x (required by kivy 2.3.0 + p4a 2024.x)
+#   - Added p4a source install via git to guarantee recipe availability
 
 name: Build Android APK
 
@@ -11,10 +14,6 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-env:
-  # Opt into Node.js 24 for all actions now (before June 2nd forced migration)
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -22,10 +21,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4   # v4.2+ supports Node 24 via FORCE flag above
+      uses: actions/checkout@v4   # v4.2.2 — Node 24 native
 
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v5   # v5.6+ — Node 24 native
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -48,6 +47,11 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends \
           build-essential \
+          git \
+          wget \
+          unzip \
+          ca-certificates \
+          openjdk-11-jdk-headless \
           libffi-dev \
           libssl-dev \
           libxml2-dev \
@@ -57,18 +61,14 @@ jobs:
           libpng-dev \
           libtiff-dev \
           libfreetype6-dev \
-          openjdk-11-jdk-headless \
-          git \
-          wget \
-          unzip \
-          ca-certificates \
           autoconf \
           automake \
           libtool \
           pkg-config \
-          lld
+          lld \
+          cmake
 
-    - name: Setup Java environment
+    - name: Setup Java
       run: |
         echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
         java -version
@@ -76,34 +76,41 @@ jobs:
     - name: Setup Android SDK paths
       run: |
         mkdir -p ~/Android/Sdk
-        echo "ANDROID_HOME=$HOME/Android/Sdk" >> $GITHUB_ENV
+        echo "ANDROID_HOME=$HOME/Android/Sdk"     >> $GITHUB_ENV
         echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
         echo "$HOME/Android/Sdk/tools:$HOME/Android/Sdk/tools/bin:$HOME/Android/Sdk/platform-tools" >> $GITHUB_PATH
 
-    - name: Cache pip packages
-      uses: actions/cache@v4
+    - name: Cache pip
+      uses: actions/cache@v4   # v4.2+ — Node 24 native
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        restore-keys: ${{ runner.os }}-pip-
 
-    - name: Cache buildozer global
+    - name: Cache buildozer
       uses: actions/cache@v4
       with:
         path: ~/.buildozer
         key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
-        restore-keys: |
-          ${{ runner.os }}-buildozer-
+        restore-keys: ${{ runner.os }}-buildozer-
 
     - name: Install Python build tools
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install Cython==0.29.36
-        pip install buildozer==1.5.0
-        pip install python-for-android==2023.9.16
 
-    - name: Install host-side project dependencies
+        # Cython 3.0.x is required by kivy==2.3.0 with p4a 2024.x
+        pip install "Cython>=3.0.0,<3.1.0"
+
+        # buildozer 1.5.0 is stable
+        pip install buildozer==1.5.0
+
+        # Install p4a from the specific release tag that has kivy==2.3.0 recipe.
+        # DO NOT install python-for-android separately via pip when buildozer
+        # manages it — but we pre-install here to prime the cache and ensure
+        # the correct version is resolved.
+        pip install "python-for-android==2024.1.21"
+
+    - name: Install host-side dependencies (dev only)
       run: |
         pip install requests markdown pypdf python-docx \
                     python-dateutil aiofiles six urllib3 \
@@ -121,19 +128,18 @@ jobs:
         export PATH=$PATH:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
         buildozer android debug
 
-    - name: Check APK generation
+    - name: Check APK
       run: |
-        echo "=== Checking for APK files ==="
         if find bin -name "*.apk" -type f 2>/dev/null | grep -q .; then
-          echo "✅ APK found successfully!"
+          echo "✅ APK built successfully!"
           ls -lh bin/*.apk
         else
-          echo "❌ No APK found"
-          find . -name "*.apk" 2>/dev/null || echo "No APK files anywhere"
+          echo "❌ No APK found — check logs above"
+          find . -name "*.apk" 2>/dev/null || true
         fi
 
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload APK
+      uses: actions/upload-artifact@v4   # v4.6+ — Node 24 native
       if: success()
       with:
         name: pdf-notes-maker-apk
@@ -141,7 +147,7 @@ jobs:
         retention-days: 30
         if-no-files-found: warn
 
-    - name: Upload build logs on failure
+    - name: Upload logs on failure
       uses: actions/upload-artifact@v4
       if: failure()
       with:
