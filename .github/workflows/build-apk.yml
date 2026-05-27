@@ -1,4 +1,6 @@
 # .github/workflows/build-apk.yml
+# Fixed: Node.js 24 compatible action versions
+# Fixed: libffi/cffi build conflict resolved via buildozer.spec
 
 name: Build Android APK
 
@@ -9,6 +11,10 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+env:
+  # Opt into Node.js 24 for all actions now (before June 2nd forced migration)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,7 +22,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4   # v4.2+ supports Node 24 via FORCE flag above
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -59,7 +65,8 @@ jobs:
           autoconf \
           automake \
           libtool \
-          pkg-config
+          pkg-config \
+          lld
 
     - name: Setup Java environment
       run: |
@@ -81,7 +88,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    - name: Cache buildozer
+    - name: Cache buildozer global
       uses: actions/cache@v4
       with:
         path: ~/.buildozer
@@ -96,11 +103,10 @@ jobs:
         pip install buildozer==1.5.0
         pip install python-for-android==2023.9.16
 
-    - name: Install project dependencies (dev only)
+    - name: Install host-side project dependencies
       run: |
-        # Install only packages that work on the host (not p4a-only ones)
-        pip install requests httpx aiohttp markdown pypdf python-docx \
-                    python-dateutil cryptography aiofiles six urllib3 \
+        pip install requests markdown pypdf python-docx \
+                    python-dateutil aiofiles six urllib3 \
                     certifi charset-normalizer idna || true
 
     - name: Clean old builds
@@ -109,7 +115,6 @@ jobs:
         rm -rf bin/*.apk 2>/dev/null || true
 
     - name: Build APK
-      # FIX: buildozer debug takes no extra CLI flags — all config is in buildozer.spec
       run: |
         export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
         export ANDROID_HOME=$HOME/Android/Sdk
