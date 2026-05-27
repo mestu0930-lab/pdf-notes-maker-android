@@ -13,13 +13,16 @@ source.exclude_patterns = tests/*,docs/*,build/*,*.pyc,__pycache__
 version = 1.0.0
 
 # -----------------------------------------------------------------------
-# REQUIREMENTS — p4a recipes only. Rules:
-#   - cffi is REMOVED: cryptography's p4a recipe bundles libffi internally.
-#     Listing cffi separately triggers a conflicting libffi autoreconf build
-#     that fails with "LT_SYS_SYMBOL_USCORE undefined macro".
-#   - pycparser is REMOVED: it's a pure-Python dep of cffi, not needed standalone.
-#   - openai / pydantic / httpx / aiohttp / typing-extensions have no p4a
-#     recipes and must NOT appear here.
+# REQUIREMENTS — p4a recipes only
+# Verified compatible with python-for-android==2024.1.21 + kivy==2.3.0
+#
+# Removed:
+#   cffi        — conflicts with cryptography's bundled libffi (autoreconf crash)
+#   pycparser   — only needed as a cffi dep, not standalone
+#   openai      — no p4a recipe
+#   pydantic    — no p4a recipe
+#   httpx       — no p4a recipe
+#   aiohttp     — no p4a recipe
 # -----------------------------------------------------------------------
 requirements =
     python3,
