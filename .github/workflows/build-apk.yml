@@ -1,65 +1,37 @@
-# .github/workflows/build-apk.yml
-# ──────────────────────────────────────────────────────────────────────────────
-# GitHub Actions workflow: Build PDF Notes Maker APK with Buildozer
-#
-# Trigger: manual (workflow_dispatch) so you control when to build.
-#          Change to `push: branches: [main]` for automatic builds.
-#
-# Output:  APK uploaded as a GitHub Actions artifact (downloadable from
-#          the Actions run page for 30 days).
-# ──────────────────────────────────────────────────────────────────────────────
-
-name: Build APK
+name: Build Android APK
 
 on:
-  workflow_dispatch:          # run manually from GitHub Actions UI
+  workflow_dispatch:
   push:
-    branches:
-      - main                  # also auto-build on push to main (remove if unwanted)
+    branches: [ main ]
 
 jobs:
-  build:
+  build-android:
     name: Build Android APK
-    runs-on: ubuntu-22.04     # ubuntu-22.04 is the tested sweet-spot for buildozer
+    runs-on: ubuntu-22.04        # pinned — don't use ubuntu-latest
 
     steps:
-      # ── 1. Check out source code ─────────────────────────────────────────
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
-
-      # ── 2. Cache the buildozer global directory (.buildozer-global) ──────
-      #    This caches the SDK, NDK, and platform-tools so subsequent builds
-      #    don't re-download ~2 GB of Android tooling every time.
-      - name: Get current date for cache key
-        id: get-date
-        run: echo "date=$(date -u '+%Y%m%d')" >> "$GITHUB_ENV"
 
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
-          key: buildozer-global-${{ runner.os }}-${{ env.date }}-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-global-${{ runner.os }}-
+            buildozer-${{ runner.os }}-
 
-      # ── 3. Build with Buildozer (uses official Kivy Docker image) ────────
-      #    ArtemSBulgakov/buildozer-action@v1 is the officially recommended
-      #    action (endorsed in kivy/buildozer README). It wraps the
-      #    kivy/buildozer Docker image and handles GitHub Actions integration.
-      - name: Build APK with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          # workdir: .   ← default is repo root; set to subfolder if needed
-          buildozer_version: stable
-          # IMPORTANT: Cython 3.x breaks p4a recipes. Pin to 0.29.33.
-          command: pip3 install --user "Cython==0.29.33" virtualenv; buildozer -v android debug
+      - name: Build APK via official Kivy Docker image
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}":/home/user/hostcwd \
+            --volume "$HOME/.buildozer":/home/user/.buildozer \
+            ghcr.io/kivy/buildozer:latest \
+            android debug
 
-      # ── 4. Upload the APK as a build artifact ────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pdf-notes-maker-debug-apk
-          path: ${{ steps.buildozer.outputs.filename }}
-          if-no-files-found: error   # fail loudly if APK wasn't produced
-          retention-days: 30
+          name: pdf-notes-maker-debug
+          path: "${{ github.workspace }}/bin/*.apk"
