@@ -1,9 +1,43 @@
+# requirements.txt – PDF Notes Maker (Desktop / CI reference)
+# ─────────────────────────────────────────────────────────────
+# This file is for LOCAL DEVELOPMENT and the GitHub Actions build environment.
+# It is NOT what goes inside buildozer.spec — see notes below.
+#
+# ANDROID packaging: all packages listed below must ALSO appear in
+# buildozer.spec [app] requirements = ...
+# Pure-Python packages install via pip automatically (no recipe needed).
+# Packages with C extensions (Pillow, pyjnius) use p4a recipes.
+# ─────────────────────────────────────────────────────────────
+
+# ── Core UI framework ─────────────────────────────────────────
 kivy==2.3.0
-kivymd
-pypdf
-openai
-httpx
-requests
-markdown
-python-docx
-pillow
+kivymd                     # use latest compatible; or pin to kivymd==1.2.0
+
+# ── Android bridge (pyjnius) ──────────────────────────────────
+pyjnius==1.6.1             # has p4a recipe; 1.6.1 is latest stable (2025)
+
+# ── OpenAI-compatible async client ───────────────────────────
+openai>=1.0.0              # pure-Python; no recipe needed; async client used
+httpx>=0.24.0              # openai depends on it; pure-Python transport layer
+
+# ── PDF reading ────────────────────────────────────────────────
+pypdf>=3.0.0               # pure-Python; replaces deprecated PyPDF2
+
+# ── DOCX reading ──────────────────────────────────────────────
+python-docx>=1.0.0         # pure-Python; import name is 'docx' in buildozer.spec
+                           # NOTE: lxml (its dependency) HAS a p4a recipe — include it
+lxml>=4.9.0                # needed by python-docx; has p4a recipe
+
+# ── Markdown rendering ────────────────────────────────────────
+Markdown>=3.5.0            # pure-Python; buildozer.spec name: markdown
+
+# ── HTTP requests ─────────────────────────────────────────────
+requests>=2.31.0           # pure-Python; has a p4a recipe for convenience
+
+# ── Image processing ──────────────────────────────────────────
+Pillow>=10.0.0             # has p4a recipe; used for images
+
+# ── Build / packaging tools (CI host only, NOT inside APK) ────
+buildozer>=1.5.0
+Cython==0.29.33            # REQUIRED: p4a is NOT compatible with Cython 3.x
+virtualenv
