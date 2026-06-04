@@ -36,7 +36,7 @@ icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
 
 # ── Orientation ────────────────────────────────────────────────────────────────
-orientation = all                          # ← VERIFY
+orientation = portrait                         # ← VERIFY
 
 # ── Android SDK / NDK ─────────────────────────────────────────────────────────
 android.api = 33
