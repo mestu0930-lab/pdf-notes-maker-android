@@ -23,7 +23,7 @@ source.exclude_exts = pyc,pyo,spec
 # List every PyPI package your app imports.
 # Pure-stdlib imports (os, json, hashlib, hmac, uuid, etc.) do NOT go here.
 # pyjnius enables jnius imports on Android.
-requirements = python3,kivy==2.3.0,kivymd,pyjnius,requests,pypdf,openai,httpx,markdown,pillow,six,certifi,charset-normalizer,idna,urllib3
+requirements = python3,kivy==2.3.1,kivymd,pyjnius,requests,Pillow,openai,httpx,pypdf,python-docx,lxml,markdown
 
 # If pdf_notes_app_kivy.py uses the openai package, ADD one of these lines:
 #   Option A (safest — old requests-based version):
@@ -36,14 +36,13 @@ icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
 
 # ── Orientation ────────────────────────────────────────────────────────────────
-orientation = portrait                           # ← VERIFY
+orientation = all                          # ← VERIFY
 
 # ── Android SDK / NDK ─────────────────────────────────────────────────────────
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
 android.ndk_api = 21
-android.sdk = 33
 android.accept_sdk_license = True
 
 # ── Build type ─────────────────────────────────────────────────────────────────
