@@ -56,7 +56,7 @@ from threading import Thread
 try:
     from jnius import autoclass
     from android.runnable import run_on_ui_thread
-    from android import activity, share
+    from android import activity
     ON_ANDROID = True
 except ImportError:
     ON_ANDROID = False
@@ -1542,10 +1542,21 @@ class PDFNotesMakerApp(App):
         self._share_file(temp_path, 'application/msword')
 
     def _share_file(self, path, mime_type):
-        if not ON_ANDROID or share is None:
+        if not ON_ANDROID:
             self.show_popup('File Saved', f'File saved to:\n{path}')
             return
-        share.open_file(path, mime_type)
+        try:
+            Intent = autoclass('android.content.Intent')
+            Uri = autoclass('android.net.Uri')
+            File = autoclass('java.io.File')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            intent = Intent(Intent.ACTION_SEND)
+            intent.setType(mime_type)
+            uri = Uri.fromFile(File(path))
+            intent.putExtra(Intent.EXTRA_STREAM, uri)
+            PythonActivity.mActivity.startActivity(Intent.createChooser(intent, "Share file"))
+        except Exception as e:
+            self.show_popup('Share Error', str(e))
 
     # ---- Settings ----
     def _settings_path(self):
