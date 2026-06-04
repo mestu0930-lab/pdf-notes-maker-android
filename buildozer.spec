@@ -23,7 +23,7 @@ source.exclude_exts = pyc,pyo,spec
 # List every PyPI package your app imports.
 # Pure-stdlib imports (os, json, hashlib, hmac, uuid, etc.) do NOT go here.
 # pyjnius enables jnius imports on Android.
-requirements = python3,kivy==2.3.0,kivymd,pyjnius,requests,pypdf,openai,httpx,markdown,python-docx,pillow,six,certifi,charset-normalizer,idna,urllib3
+requirements = python3,kivy==2.3.0,kivymd,pyjnius,requests,pypdf,openai,httpx,markdown,pillow,six,certifi,charset-normalizer,idna,urllib3
 
 # If pdf_notes_app_kivy.py uses the openai package, ADD one of these lines:
 #   Option A (safest — old requests-based version):
